@@ -390,8 +390,8 @@ class StringeeCall {
   }
 
   /// close event stream
-  void destroy() {
-    _subscriber.cancel();
-    _eventStreamController.close();
+  Future<void> destroy() {
+   await _subscriber.cancel();
+   await _eventStreamController.close();
   }
 }
