@@ -359,7 +359,7 @@ class StringeeCall2 {
   }
 
   /// Switch camera
-  Future<Map<dynamic, dynamic>> switchCamera({int? cameraId}) async {
+  Future<Map<dynamic, dynamic>> switchCamera({String? cameraId}) async {
     Map params = {
       'callId': this._id,
       'uuid': _client.uuid,
@@ -409,25 +409,25 @@ class StringeeCall2 {
     }
   }
 
-  /// Start capture screen
-  Future<Map<dynamic, dynamic>> startCapture() async {
-    final params = {
-      'callId': this._id,
-      'uuid': _client.uuid,
-    };
-    return await StringeeClient.methodChannel
-        .invokeMethod('startCapture', params);
-  }
-
-  /// Stop capture screen
-  Future<Map<dynamic, dynamic>> stopCapture() async {
-    final params = {
-      'callId': this._id,
-      'uuid': _client.uuid,
-    };
-    return await StringeeClient.methodChannel
-        .invokeMethod('stopCapture', params);
-  }
+  // /// Start capture screen
+  // Future<Map<dynamic, dynamic>> startCapture() async {
+  //   final params = {
+  //     'callId': this._id,
+  //     'uuid': _client.uuid,
+  //   };
+  //   return await StringeeClient.methodChannel
+  //       .invokeMethod('startCapture', params);
+  // }
+  //
+  // /// Stop capture screen
+  // Future<Map<dynamic, dynamic>> stopCapture() async {
+  //   final params = {
+  //     'callId': this._id,
+  //     'uuid': _client.uuid,
+  //   };
+  //   return await StringeeClient.methodChannel
+  //       .invokeMethod('stopCapture', params);
+  // }
 
   /// close event stream
   void destroy() {

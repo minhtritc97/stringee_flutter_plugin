@@ -84,7 +84,12 @@ public class VideoConferenceManager {
             return;
         }
 
-        StringeeVideoTrack localVideoTrack = stringeeVideo.createLocalVideoTrack(stringeeManager.getContext(), options);
+        StringeeVideoTrack localVideoTrack = stringeeVideo.createLocalVideoTrack(stringeeManager.getContext(), options, new StatusListener() {
+            @Override
+            public void onSuccess() {
+
+            }
+        });
         String localId = Utils.createLocalId();
         VideoTrackManager videoTrackManager = new VideoTrackManager(clientWrapper, localVideoTrack, localId, false);
         stringeeManager.getTracksMap().put(localId, videoTrackManager);
@@ -544,10 +549,10 @@ public class VideoConferenceManager {
      * Switch camera
      *
      * @param localId
-     * @param cameraId
+     * @param cameraName
      * @param result
      */
-    public void switchCamera(final String localId, final int cameraId, final Result result) {
+    public void switchCamera(final String localId, final String cameraName, final Result result) {
         if (!clientWrapper.isConnected()) {
             Log.d(TAG, "switchCamera: false - -1 - StringeeClient is disconnected");
             Map map = new HashMap();
@@ -599,6 +604,6 @@ public class VideoConferenceManager {
                     }
                 });
             }
-        }, cameraId);
+        }, cameraName);
     }
 }

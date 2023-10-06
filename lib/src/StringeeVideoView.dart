@@ -12,7 +12,6 @@ class StringeeVideoView extends StatefulWidget {
   late final String? callId;
   late final String? trackId;
   bool isLocal = true;
-  final bool? isOverlay;
   final bool? isMirror;
   final EdgeInsetsGeometry? margin;
   final AlignmentGeometry? alignment;
@@ -28,7 +27,6 @@ class StringeeVideoView extends StatefulWidget {
     this.callId,
     this.isLocal, {
     Key? key,
-    this.isOverlay = false,
     this.isMirror = false,
     this.height,
     this.width,
@@ -47,7 +45,6 @@ class StringeeVideoView extends StatefulWidget {
   StringeeVideoView.forTrack(
     this.trackId, {
     Key? key,
-    this.isOverlay = false,
     this.isMirror = false,
     this.height,
     this.width,
@@ -108,8 +105,6 @@ class StringeeVideoViewState extends State<StringeeVideoView> {
     }
 
     if (Platform.isAndroid) {
-      creationParams['isOverlay'] =
-          widget.isOverlay == null ? false : widget.isOverlay;
       creationParams['isMirror'] =
           widget.isMirror == null ? false : widget.isMirror;
     }
@@ -191,7 +186,7 @@ class StringeeVideoViewState extends State<StringeeVideoView> {
     if (widget.borderRadius != null) {
       current = new ClipRRect(
         clipBehavior: Clip.hardEdge,
-        borderRadius: widget.borderRadius,
+        borderRadius: widget.borderRadius!,
         child: current,
       );
     }

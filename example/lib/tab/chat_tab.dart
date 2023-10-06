@@ -245,7 +245,7 @@ class ChatTabState extends State<ChatTab> {
                         width: 175.0,
                         child: new ElevatedButton(
                           onPressed: () {
-                            chat.getConversationById('convid').then((value) {
+                            chat.getConversationById('getConversationById').then((value) {
                               print("Flutter - getConversationById - result: " +
                                   value.toString());
 

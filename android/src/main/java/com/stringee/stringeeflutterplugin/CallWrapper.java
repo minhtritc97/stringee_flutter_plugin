@@ -17,12 +17,11 @@ import com.stringee.common.StringeeAudioManager.AudioDevice;
 import com.stringee.common.StringeeAudioManager.AudioManagerEvents;
 import com.stringee.exception.StringeeError;
 import com.stringee.listener.StatusListener;
-import com.stringee.video.StringeeVideo;
-import com.stringee.video.StringeeVideo.ScalingType;
+import com.stringee.video.TextureViewRenderer;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.RendererCommon.ScalingType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -113,7 +112,12 @@ public class CallWrapper implements StringeeCall.StringeeCallListener {
         }
 
         prepareCall();
-        call.makeCall();
+        call.makeCall(new StatusListener() {
+            @Override
+            public void onSuccess() {
+
+            }
+        });
     }
 
     /**
@@ -182,7 +186,11 @@ public class CallWrapper implements StringeeCall.StringeeCallListener {
             return;
         }
 
-        call.answer();
+        call.answer(new StatusListener() {
+            @Override
+            public void onSuccess() {
+            }
+        });
         Log.d(TAG, "answer: success");
         Map map = new HashMap();
         map.put("status", true);
@@ -203,7 +211,11 @@ public class CallWrapper implements StringeeCall.StringeeCallListener {
         hasRemoteStream = false;
         remoteStreamShowed = false;
 
-        call.hangup();
+        call.hangup(new StatusListener() {
+            @Override
+            public void onSuccess() {
+            }
+        });
         stringeeManager.getCallsMap().put(call.getCallId(), null);
         Log.d(TAG, "hangup: success");
         Map map = new HashMap();
@@ -225,7 +237,11 @@ public class CallWrapper implements StringeeCall.StringeeCallListener {
         hasRemoteStream = false;
         remoteStreamShowed = false;
 
-        call.reject();
+        call.reject(new StatusListener() {
+            @Override
+            public void onSuccess() {
+            }
+        });
         stringeeManager.getCallsMap().put(call.getCallId(), null);
         Log.d(TAG, "reject: success");
         Map map = new HashMap();
@@ -457,9 +473,9 @@ public class CallWrapper implements StringeeCall.StringeeCallListener {
      * Switch Camera
      *
      * @param result
-     * @param cameraId
+     * @param cameraName
      */
-    public void switchCamera(int cameraId, final Result result) {
+    public void switchCamera(String cameraName, final Result result) {
         if (!clientWrapper.isConnected()) {
             Log.d(TAG, "switchCamera: false - -1 - StringeeClient is disconnected");
             Map map = new HashMap();
@@ -501,7 +517,7 @@ public class CallWrapper implements StringeeCall.StringeeCallListener {
                     }
                 });
             }
-        }, cameraId);
+        }, cameraName);
     }
 
     /**
@@ -542,10 +558,7 @@ public class CallWrapper implements StringeeCall.StringeeCallListener {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        Log.d(TAG, "getCallStats: callBytesReceived: " + stringeeCallStats.callBytesReceived +
-                                " - callPacketsLost: " + stringeeCallStats.callPacketsLost +
-                                " - callPacketsReceived: " + stringeeCallStats.callPacketsReceived +
-                                " - timeStamp: " + stringeeCallStats.timeStamp);
+                        Log.d(TAG, "getCallStats: callBytesReceived: " + stringeeCallStats.callBytesReceived + " - callPacketsLost: " + stringeeCallStats.callPacketsLost + " - callPacketsReceived: " + stringeeCallStats.callPacketsReceived + " - timeStamp: " + stringeeCallStats.timeStamp);
                         Map map = new HashMap();
                         map.put("status", true);
                         map.put("code", 0);
@@ -580,9 +593,9 @@ public class CallWrapper implements StringeeCall.StringeeCallListener {
         }
 
         if (isLocal) {
-            call.getLocalView().setMirror(isMirror);
+            call.getLocalView2().setMirror(isMirror);
         } else {
-            call.getRemoteView().setMirror(isMirror);
+            call.getRemoteView2().setMirror(isMirror);
         }
 
         Log.d(TAG, "setMirror: success");
@@ -593,20 +606,20 @@ public class CallWrapper implements StringeeCall.StringeeCallListener {
         result.success(map);
     }
 
-    public SurfaceViewRenderer getLocalView() {
-        return call.getLocalView();
+    public TextureViewRenderer getLocalView() {
+        return call.getLocalView2();
     }
 
-    public SurfaceViewRenderer getRemoteView() {
-        return call.getRemoteView();
+    public TextureViewRenderer getRemoteView() {
+        return call.getRemoteView2();
     }
 
-    public void renderLocalView(boolean isOverlay, StringeeVideo.ScalingType scalingType) {
-        call.renderLocalView(isOverlay, scalingType);
+    public void renderLocalView(ScalingType scalingType) {
+        call.renderLocalView2(scalingType);
     }
 
-    public void renderRemoteView(boolean isOverlay, StringeeVideo.ScalingType scalingType) {
-        call.renderRemoteView(isOverlay, scalingType);
+    public void renderRemoteView(ScalingType scalingType) {
+        call.renderRemoteView2(scalingType);
     }
 
     @Override
@@ -614,7 +627,7 @@ public class CallWrapper implements StringeeCall.StringeeCallListener {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                if (signalingState == SignalingState.CALLING) {
+                if (signalingState == SignalingState.CALLING || signalingState == SignalingState.RINGING) {
                     Log.d(TAG, "makeCall: success");
                     stringeeManager.getCallsMap().put(stringeeCall.getCallId(), CallWrapper.this);
                     Map map = new HashMap();
@@ -764,18 +777,17 @@ public class CallWrapper implements StringeeCall.StringeeCallListener {
                         Map<String, Object> localViewOptions = stringeeManager.getLocalViewOptions().get(stringeeCall.getCallId());
                         FrameLayout localView = (FrameLayout) localViewOptions.get("layout");
                         boolean isMirror = (Boolean) localViewOptions.get("isMirror");
-                        boolean isOverlay = (Boolean) localViewOptions.get("isOverlay");
                         ScalingType scalingType = (ScalingType) localViewOptions.get("scalingType");
 
                         localView.removeAllViews();
-                        if (stringeeCall.getLocalView().getParent() != null) {
-                            ((FrameLayout) stringeeCall.getLocalView().getParent()).removeView(stringeeCall.getLocalView());
+                        if (getLocalView().getParent() != null) {
+                            ((FrameLayout) getLocalView().getParent()).removeView(getLocalView());
                         }
                         LayoutParams layoutParams = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
                         layoutParams.gravity = Gravity.CENTER;
-                        localView.addView(stringeeCall.getLocalView(), layoutParams);
-                        stringeeCall.renderLocalView(isOverlay, scalingType);
-                        stringeeCall.getLocalView().setMirror(isMirror);
+                        localView.addView(getLocalView(), layoutParams);
+                        renderLocalView(scalingType);
+                        getLocalView().setMirror(isMirror);
 
 
                         isResumeVideo = false;
@@ -811,19 +823,18 @@ public class CallWrapper implements StringeeCall.StringeeCallListener {
                     if (remoteViewOptions != null) {
                         FrameLayout remoteView = (FrameLayout) remoteViewOptions.get("layout");
                         boolean isMirror = (Boolean) remoteViewOptions.get("isMirror");
-                        boolean isOverlay = (Boolean) remoteViewOptions.get("isOverlay");
                         ScalingType scalingType = (ScalingType) remoteViewOptions.get("scalingType");
 
                         if (remoteView != null) {
                             remoteView.removeAllViews();
-                            if (stringeeCall.getRemoteView().getParent() != null) {
-                                ((FrameLayout) stringeeCall.getRemoteView().getParent()).removeView(stringeeCall.getRemoteView());
+                            if (getRemoteView().getParent() != null) {
+                                ((FrameLayout) getRemoteView().getParent()).removeView(getRemoteView());
                             }
                             LayoutParams layoutParams = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
                             layoutParams.gravity = Gravity.CENTER;
-                            remoteView.addView(stringeeCall.getRemoteView(), layoutParams);
-                            stringeeCall.renderRemoteView(isOverlay, scalingType);
-                            stringeeCall.getRemoteView().setMirror(isMirror);
+                            remoteView.addView(getRemoteView(), layoutParams);
+                            renderRemoteView(scalingType);
+                            getRemoteView().setMirror(isMirror);
                         }
                     }
                 }
